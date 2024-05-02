@@ -1,0 +1,27 @@
+Value,output,flag,username,timestamp
+65,"'
+    <html>
+    <head>
+        <style>
+            .bar-container {
+                width: 100%;
+                background-color: #ddd;
+            }
+
+            .bar {
+                width: 65%;
+                height: 30px;
+                background-color: #76a9fa;
+                text-align: center;
+                line-height: 30px;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <div class=""bar-container"">
+            <div class=""bar"">65%</div>
+        </div>
+    </body>
+    </html>
+    ",,,2024-05-02 01:21:33.283274
