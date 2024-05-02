@@ -1,3 +1,4 @@
+from typing import Any
 import gradio as gr
 from openai import OpenAI
 from transformers import pipeline
@@ -13,6 +14,7 @@ class Chatbot:
         # self.history = []
         # self.message = ""
         # self.bot_message = ""
+        self.patience = -5
         self.len_history = 0
         self.chat_log = []
         self.patience = 0
@@ -22,6 +24,12 @@ class Chatbot:
 
     def get_history_length(self):
         return self.len_history
+    
+    def get_patience(self):
+        return self.patience
+    
+    def reduce_patience(self):
+        self.patience -= 1
     
     # def patience(self):
 
@@ -109,6 +117,7 @@ class Chatbot:
                 history[-1][1] += response
                 # print("test_history: ", history)
                 yield history
+        self.reduce_patience()
         self.len_history = len(history)
 
 with gr.Blocks() as demo:
@@ -123,12 +132,14 @@ with gr.Blocks() as demo:
     # len_history = b.get_history_length()
     user_greeting = "which model you are use rn"
 
-    def get_history_length(value):
-        return value
+    # def get_history_length(value):
+    #     return value
+    
+
     start.click(b.greeting_message, chatbot, chatbot)
     msg.submit(b.user, [msg, chatbot], [msg, chatbot], queue=False).then(
         b.bot, chatbot, chatbot
-    ).then(b.get_history_length, outputs=p_slider)
+    ).then(b.get_patience, outputs=p_slider)
     # .then(get_history_length, inputs=len_history, outputs=num_box)
     clear.click(lambda: None, None, chatbot, queue=False)
 
