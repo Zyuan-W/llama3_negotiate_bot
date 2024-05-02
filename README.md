@@ -10,3 +10,7 @@ them to negotiate with a cunning and clever criminal.
 pip install -f requirements.txt
 ```
 
+### Run
+```
+python LLM_Negotiate_UI.py
+```
