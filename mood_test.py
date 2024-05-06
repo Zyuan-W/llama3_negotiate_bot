@@ -1,16 +1,15 @@
+import time
 from typing import Any
 import gradio as gr
 from openai import OpenAI
 from transformers import pipeline
 
-client = OpenAI(
-base_url = "http://localhost:11434/v1/",
-api_key = "ollama"
-)
+client = OpenAI(base_url="http://localhost:11434/v1/", api_key="ollama")
 
-POSITIVE = 'POS'
-NEGATIVE = 'NEG'
-NEUTRAL = 'NEU'
+POSITIVE = "POS"
+NEGATIVE = "NEG"
+NEUTRAL = "NEU"
+
 
 class Chatbot:
     def __init__(self):
@@ -21,23 +20,25 @@ class Chatbot:
         self.len_history = 0
         self.chat_log = []
         self.patience = 0
-        self.system_prompt = """ This is a negotiation simulation game
+        self.system_prompt = """This is a negotiation simulation game
                                 You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. 
                                 Create a story which can adhere to your regulations.
-                                Response as a criminal,your respnse should be short and clear, better no more than two sentences, only anwer question when i ask. 
-                                I am a police officer negotiating with you in order to try and rescue the girl. 
-                                Add an emoji in your response to represent if your think my negotiation is helpful or not.
+                                Respond as a criminal, keeping your answers brief and concise, limited to two sentences at most. Only reply when prompted with a question.
+                                I am a police officer negotiating with you in order to try and rescue the girl.
                                 """
 
     def get_history_length(self):
         return self.len_history
-    
+
     def get_patience(self):
         return self.patience
-    
+
     def sentiment_analysis(self, bot_message):
-        sentiment = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
-        result = sentiment(bot_message)[0]['label']
+        sentiment = pipeline(
+            "text-classification",
+            model="finiteautomata/bertweet-base-sentiment-analysis",
+        )
+        result = sentiment(bot_message)[0]["label"]
         print(result)
         if result == POSITIVE:
             self.patience += 5
@@ -45,10 +46,10 @@ class Chatbot:
             self.patience += 4
         else:
             self.patience -= 3
-    
+
     # def rpatience_system(self):
     #     self.patience -= 1
-    
+
     # def patience(self):
 
     # def user_greeting(self, user_message, history):
@@ -58,7 +59,7 @@ class Chatbot:
     def greeting_message(self, history):
 
         greeting_log = []
-        message = "let's start!"
+        message = "Let's start!"
         # print("greeting message: ", message)
 
         greeting_log.append({"role": "system", "content": self.system_prompt})
@@ -71,12 +72,12 @@ class Chatbot:
         greeting_log.append({"role": "user", "content": message})
 
         completion = client.chat.completions.create(
-        model="llama3",
-        messages=greeting_log,
-        temperature=0.5,
-        top_p=1,
-        max_tokens=1024,
-        stream=True
+            model="llama3",
+            messages=greeting_log,
+            temperature=0.5,
+            top_p=1,
+            max_tokens=1024,
+            stream=True,
         )
         history.append([message, ""])
 
@@ -95,11 +96,10 @@ class Chatbot:
         # self.len_history = len(history)
         # return result
 
-    def end_message(self, history):
-        print("into end_message")
+    def end_message(self, history, message):
+        # print("into end_message")
 
         # greeting_log = se
-        message = "the game end, release the girl now"
         # print("greeting message: ", message)
 
         # greeting_log.append({"role": "system", "content": self.system_prompt})
@@ -108,12 +108,12 @@ class Chatbot:
         self.chat_log.append({"role": "user", "content": message})
 
         completion = client.chat.completions.create(
-        model="llama3",
-        messages=self.chat_log,
-        temperature=0.5,
-        top_p=1,
-        max_tokens=1024,
-        stream=True
+            model="llama3",
+            messages=self.chat_log,
+            temperature=0.5,
+            top_p=1,
+            max_tokens=1024,
+            stream=True,
         )
         history.append([message, ""])
 
@@ -130,7 +130,6 @@ class Chatbot:
                 # yield history
         return history
 
-
     def user(self, user_message, history):
         # print("user_message: ", user_message)
         # chat_log.append({"role": "user", "content": user_message})
@@ -142,32 +141,35 @@ class Chatbot:
         ppp = self.get_patience()
         print("patience: ", ppp)
         # system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
-        #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
+        #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl.
         #                 if you think my negotiation is help, add positive in [] at the end of your response. if you my negotiation is not help, add negative in [] at the end of your response."""
         self.chat_log.append({"role": "system", "content": self.system_prompt})
-        if ppp >= 3:
-            print("patience >= 3")
-            yield self.end_message(history)
+        if ppp >= 20:
+            print("patience >= 20")
+            message = "The girl has been released safely. Game Over!"
+            yield self.end_message(history, message)
             print("end")
-        
-        elif ppp <= -3:
-            print("patience <= -3")
-            yield self.end_message(history)
+
+        elif ppp <= -20:
+            print("patience <= -20")
+            message = "The girl has been killed. Game Over!"
+            yield self.end_message(history, message)
+            # time.sleep(10)
             print("end")
-           
+
         else:
             for human, assistant in history:
                 # print("human: ", human)
-                self.chat_log.append({"role": "user", "content": human })
-                self.chat_log.append({"role": "assistant", "content":assistant})
+                self.chat_log.append({"role": "user", "content": human})
+                self.chat_log.append({"role": "assistant", "content": assistant})
             # chat_log.append({"role": "user", "content": history[-1][0]})
 
             completion = client.chat.completions.create(
-                model='llama3',
-                messages= self.chat_log,
+                model="llama3",
+                messages=self.chat_log,
                 temperature=1.0,
                 max_tokens=100,
-                stream=True
+                stream=True,
             )
 
             # first_chunk = True
@@ -181,10 +183,11 @@ class Chatbot:
                     history[-1][1] += response
                     # print("test_history: ", history)
                     yield history
-            
+
             # self.reduce_patience()
             # self.len_history = len(history)
             self.sentiment_analysis(model_response)
+
 
 with gr.Blocks() as demo:
     b = Chatbot()
@@ -208,6 +211,5 @@ with gr.Blocks() as demo:
     clear.click(lambda: None, None, chatbot, queue=False)
 
 
-    
 demo.queue()
 demo.launch()

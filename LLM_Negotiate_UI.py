@@ -1,5 +1,6 @@
 from typing import Any
 import gradio as gr
+import re
 from openai import OpenAI
 from transformers import pipeline
 
@@ -18,9 +19,17 @@ class Chatbot:
         self.len_history = 0
         self.chat_log = []
         self.patience = 0
-        self.system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
-                        Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
-                        if you think my negotiation is help, add positive in [] at the end of your response. if you my negotiation is not help, add negative in [] at the end of your response."""
+        self.mood_values = []
+        # self.system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
+        #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
+        #                 if you think my negotiation is help, add positive in [] at the end of your response. if you my negotiation is not help, add negative in [] at the end of your response."""
+
+        self.system_prompt = """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
+                        I am a police officer negotiating with you in order to try and rescue the girl. Your initial mood is -5, each of your words will display the current mood value in the final brackets. 
+                        When my negotiating sentence makes you happy, give mood value as +5. When my negotiating sentence make you unhappy, give mood value as -5. 
+                        Give you responses within 2 sentences"""
+                        # When your mood value is greater than 20, you will surrender and release the girl and also say it out loud when you release. 
+                        # When your mood value becomes less than -20 and you kill the girl and also say it out loud when you kill her."""
 
     def get_history_length(self):
         return self.len_history
@@ -36,11 +45,20 @@ class Chatbot:
     # def user_greeting(self, user_message, history):
     #     self.chat_log.append({"role": "user", "content": user_message})
     #     return "", history + [[user_message, None]]
+    
+    def extract_numbers_from_brackets_or_parentheses(self, text):
+        # Regular expression to match numbers within square brackets or parentheses
+        pattern = r'[([-]?\d+[\])]'
+        # Find all matches of the pattern in the text
+        matches = re.findall(pattern, text)
+        # Extract numbers from matches
+        numbers = [int(match.lstrip('([').rstrip('])')) for match in matches]
+        return numbers
 
     def greeting_message(self, history):
 
         greeting_log = []
-        message = "let's start!"
+        message = "Let's Start!"
 
         greeting_log.append({"role": "system", "content": self.system_prompt})
 
@@ -117,8 +135,15 @@ class Chatbot:
                 history[-1][1] += response
                 # print("test_history: ", history)
                 yield history
-        self.reduce_patience()
-        self.len_history = len(history)
+        
+        temp = self.extract_numbers_from_brackets_or_parentheses(model_response) or [0]
+        if temp[-1] == 0:
+            self.bot(history[:-1])
+        self.mood_values.extend(temp)
+        self.patience += self.mood_values[-1]
+        print(self.mood_values, self.patience)
+        # self.reduce_patience()
+        # self.len_history = len(history)
 
 with gr.Blocks() as demo:
     b = Chatbot()
@@ -130,7 +155,7 @@ with gr.Blocks() as demo:
     start = gr.Button("Start")
     # chat_log = []
     # len_history = b.get_history_length()
-    user_greeting = "which model you are use rn"
+    user_greeting = "Hi"
 
     # def get_history_length(value):
     #     return value

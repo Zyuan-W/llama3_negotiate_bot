@@ -3,10 +3,7 @@ import gradio as gr
 from openai import OpenAI
 from transformers import pipeline
 
-client = OpenAI(
-base_url = "http://localhost:11434/v1/",
-api_key = "ollama"
-)
+client = OpenAI(base_url="http://localhost:11434/v1/", api_key="ollama")
 
 
 class Chatbot:
@@ -18,17 +15,17 @@ class Chatbot:
         self.len_history = 0
         self.chat_log = []
         self.patience = 0
-        self.system_prompt =  """Your are an AI assistant. You are tasked with helping a user and answer their questions."""
+        self.system_prompt = """Your are an AI assistant. You are tasked with helping a user and answer their questions."""
 
     def get_history_length(self):
         return self.len_history
-    
+
     def get_patience(self):
         return self.patience
-    
+
     def reduce_patience(self):
         self.patience -= 1
-    
+
     # def patience(self):
 
     # def user_greeting(self, user_message, history):
@@ -50,12 +47,12 @@ class Chatbot:
         greeting_log.append({"role": "user", "content": message})
 
         completion = client.chat.completions.create(
-        model="llama2",
-        messages=greeting_log,
-        temperature=0.5,
-        top_p=1,
-        max_tokens=1024,
-        stream=True
+            model="llama2",
+            messages=greeting_log,
+            temperature=0.5,
+            top_p=1,
+            max_tokens=1024,
+            stream=True,
         )
         history.append([message, ""])
 
@@ -72,7 +69,6 @@ class Chatbot:
                 yield history
             # print("greeting model_response: ", model_response)
         # self.len_history = len(history)
-        
 
     def user(self, user_message, history):
         # print("user_message: ", user_message)
@@ -83,7 +79,7 @@ class Chatbot:
 
     def bot(self, history):
         # system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
-        #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
+        #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl.
         #                 if you think my negotiation is help, add positive in [] at the end of your response. if you my negotiation is not help, add negative in [] at the end of your response."""
         self.chat_log.append({"role": "system", "content": self.system_prompt})
         # print("bot history: ", history[1])
@@ -92,16 +88,16 @@ class Chatbot:
 
         for human, assistant in history:
             # print("human: ", human)
-            self.chat_log.append({"role": "user", "content": human })
-            self.chat_log.append({"role": "assistant", "content":assistant})
+            self.chat_log.append({"role": "user", "content": human})
+            self.chat_log.append({"role": "assistant", "content": assistant})
         # chat_log.append({"role": "user", "content": history[-1][0]})
 
         completion = client.chat.completions.create(
-            model='llama2',
-            messages= self.chat_log,
+            model="llama2",
+            messages=self.chat_log,
             temperature=1.0,
             max_tokens=100,
-            stream=True
+            stream=True,
         )
 
         # first_chunk = True
@@ -118,6 +114,7 @@ class Chatbot:
         self.reduce_patience()
         self.len_history = len(history)
 
+
 with gr.Blocks() as demo:
     b = Chatbot()
     # num_box = gr.Number(-10, label="patience")
@@ -132,7 +129,6 @@ with gr.Blocks() as demo:
 
     # def get_history_length(value):
     #     return value
-    
 
     start.click(b.greeting_message, chatbot, chatbot)
     msg.submit(b.user, [msg, chatbot], [msg, chatbot], queue=False).then(
@@ -144,6 +140,6 @@ with gr.Blocks() as demo:
 
 # demo = gr.ChatInterface()
 
-    
+
 demo.queue()
 demo.launch()
