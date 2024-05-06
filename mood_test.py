@@ -59,6 +59,7 @@ class Chatbot:
 
         greeting_log = []
         message = "let's start!"
+        # print("greeting message: ", message)
 
         greeting_log.append({"role": "system", "content": self.system_prompt})
 
@@ -94,6 +95,41 @@ class Chatbot:
         # self.len_history = len(history)
         # return result
 
+    def end_message(self, history):
+        print("into end_message")
+
+        # greeting_log = se
+        message = "the game end, release the girl now"
+        # print("greeting message: ", message)
+
+        # greeting_log.append({"role": "system", "content": self.system_prompt})
+        self.chat_log.append({"role": "system", "content": message})
+
+        self.chat_log.append({"role": "user", "content": message})
+
+        completion = client.chat.completions.create(
+        model="llama3",
+        messages=self.chat_log,
+        temperature=0.5,
+        top_p=1,
+        max_tokens=1024,
+        stream=True
+        )
+        history.append([message, ""])
+
+        history[-1][1] = ""
+        model_response = ""
+        for chunk in completion:
+            if chunk.choices[0].delta.content is not None:
+                response = chunk.choices[0].delta.content
+                model_response += response
+                # print("model_response: ", model_response)
+                history[-1][1] += response
+                # model_response = history[-1][1]
+                # print("test_history: ", history)
+                # yield history
+        return history
+
 
     def user(self, user_message, history):
         # print("user_message: ", user_message)
@@ -104,59 +140,51 @@ class Chatbot:
 
     def bot(self, history):
         ppp = self.get_patience()
+        print("patience: ", ppp)
         # system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
         #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
         #                 if you think my negotiation is help, add positive in [] at the end of your response. if you my negotiation is not help, add negative in [] at the end of your response."""
         self.chat_log.append({"role": "system", "content": self.system_prompt})
-        if ppp >= 5:
-            print("patience >= 5")
-            release_command = "I win, the game is end, now release the girl"
-            self.chat_log.append({"role": "system", "content": release_command})
-            self.chat_log.append({"role": "user", "content": release_command})
-            for human, assistant in history:
-                # print("human: ", human)
-                self.chat_log.append({"role": "user", "content": human })
-                self.chat_log.append({"role": "assistant", "content":assistant})
-        elif ppp <= -10:
-            print("patience <= -10")
-            release_command = "You win, the game is end, now go to the bad ending"
-            self.chat_log.append({"role": "system", "content": release_command})
-            self.chat_log.append({"role": "user", "content": release_command})
-            for human, assistant in history:
-                # print("human: ", human)
-                self.chat_log.append({"role": "user", "content": human })
-                self.chat_log.append({"role": "assistant", "content":assistant})
+        if ppp >= 3:
+            print("patience >= 3")
+            yield self.end_message(history)
+            print("end")
+        
+        elif ppp <= -3:
+            print("patience <= -3")
+            yield self.end_message(history)
+            print("end")
+           
         else:
             for human, assistant in history:
                 # print("human: ", human)
                 self.chat_log.append({"role": "user", "content": human })
                 self.chat_log.append({"role": "assistant", "content":assistant})
-        # chat_log.append({"role": "user", "content": history[-1][0]})
+            # chat_log.append({"role": "user", "content": history[-1][0]})
 
-        completion = client.chat.completions.create(
-            model='llama3',
-            messages= self.chat_log,
-            temperature=1.0,
-            max_tokens=100,
-            stream=True
-        )
+            completion = client.chat.completions.create(
+                model='llama3',
+                messages= self.chat_log,
+                temperature=1.0,
+                max_tokens=100,
+                stream=True
+            )
 
-        # first_chunk = True
-        history[-1][1] = ""
-        model_response = ""
-        for chunk in completion:
-            if chunk.choices[0].delta.content is not None:
-                response = chunk.choices[0].delta.content
-                model_response += response
-                # print("model_response: ", model_response)
-                history[-1][1] += response
-                # print("test_history: ", history)
-                yield history
-        
-        # self.reduce_patience()
-        # self.len_history = len(history)
-        self.sentiment_analysis(model_response)
-        print("patience: ", ppp)
+            # first_chunk = True
+            history[-1][1] = ""
+            model_response = ""
+            for chunk in completion:
+                if chunk.choices[0].delta.content is not None:
+                    response = chunk.choices[0].delta.content
+                    model_response += response
+                    # print("model_response: ", model_response)
+                    history[-1][1] += response
+                    # print("test_history: ", history)
+                    yield history
+            
+            # self.reduce_patience()
+            # self.len_history = len(history)
+            self.sentiment_analysis(model_response)
 
 with gr.Blocks() as demo:
     b = Chatbot()
