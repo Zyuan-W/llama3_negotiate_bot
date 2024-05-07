@@ -18,7 +18,7 @@ class Chatbot:
         self.patience = -5
         self.len_history = 0
         self.chat_log = []
-        self.patience = 0
+        # self.patience = 0
         self.mood_values = []
         # self.system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
         #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
@@ -37,8 +37,8 @@ class Chatbot:
     def get_patience(self):
         return self.patience
     
-    def reduce_patience(self):
-        self.patience -= 1
+    # def reduce_patience(self):
+    #     self.patience -= 1
     
     # def patience(self):
 
@@ -115,7 +115,6 @@ class Chatbot:
             self.chat_log.append({"role": "user", "content": human })
             self.chat_log.append({"role": "assistant", "content":assistant})
         # chat_log.append({"role": "user", "content": history[-1][0]})
-
         completion = client.chat.completions.create(
             model='llama3',
             messages= self.chat_log,
@@ -124,32 +123,65 @@ class Chatbot:
             stream=True
         )
 
-        # first_chunk = True
-        history[-1][1] = ""
-        model_response = ""
-        for chunk in completion:
-            if chunk.choices[0].delta.content is not None:
-                response = chunk.choices[0].delta.content
-                model_response += response
-                # print("model_response: ", model_response)
-                history[-1][1] += response
-                # print("test_history: ", history)
-                yield history
+
+        patience = self.get_patience()
+        if patience < 5 and patience > -6:
+
+            # first_chunk = True
+            history[-1][1] = ""
+            model_response = ""
+            for chunk in completion:
+                if chunk.choices[0].delta.content is not None:
+                    response = chunk.choices[0].delta.content
+                    # print("response type: ", type(response))
+                    model_response += response
+                    # print("model_response: ", model_response)
+                    history[-1][1] += response
+                    # print("test_history: ", history)
+                    yield history
+            
+            temp = self.extract_numbers_from_brackets_or_parentheses(model_response) or [0]
+            if temp[-1] == 0:
+                self.bot(history[:-1])
+            self.mood_values.extend(temp)
+            self.patience += self.mood_values[-1]
+            print(self.mood_values, self.patience)
         
-        temp = self.extract_numbers_from_brackets_or_parentheses(model_response) or [0]
-        if temp[-1] == 0:
-            self.bot(history[:-1])
-        self.mood_values.extend(temp)
-        self.patience += self.mood_values[-1]
-        print(self.mood_values, self.patience)
-        # self.reduce_patience()
-        # self.len_history = len(history)
+        else:
+            # history[-1][1] = ""
+            # response = "I surrendered and released the girl"
+            # history[-1][1] += response
+            # yield history
+            end_message = "Game Over, end the conversion and give your final decision"
+
+            self.chat_log.append({"role": "user", "content": end_message})
+
+            completion = client.chat.completions.create(
+                model='llama3',
+                messages= self.chat_log,
+                temperature=1.0,
+                max_tokens=100,
+                stream=True
+            )
+
+            history[-1][1] = ""
+            model_response = ""
+            for chunk in completion:
+                if chunk.choices[0].delta.content is not None:
+                    response = chunk.choices[0].delta.content
+                    model_response += response
+                    # print("model_response: ", model_response)
+                    history[-1][1] += response
+                    # print("test_history: ", history)
+                    yield history
+
 
 with gr.Blocks() as demo:
     b = Chatbot()
     # num_box = gr.Number(-10, label="patience")
+    
+    chatbot = gr.Chatbot(height=600)
     p_slider = gr.Slider(minimum=-20, maximum=20, value=-5, label="Patience")
-    chatbot = gr.Chatbot()
     msg = gr.Textbox()
     clear = gr.Button("Clear")
     start = gr.Button("Start")
