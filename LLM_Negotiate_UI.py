@@ -54,8 +54,8 @@ class Chatbot:
         # Extract numbers from matches
         print("Match", matches)
         num = [int(match.lstrip('([').rstrip('])')) for match in matches]
-        if 0 in num:
-            return num
+        if 0 in num or len(num) == 0:
+            return [0]
         # print(match.lstrip('([').rstrip('])') for match in matches)
         numbers = [num[0] / abs(num[0]) * 5]
         return numbers
