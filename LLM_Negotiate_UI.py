@@ -53,10 +53,11 @@ class Chatbot:
         matches = re.findall(pattern, text)
         # Extract numbers from matches
         print("Match", matches)
-        if "0" in matches:
-            return [0]
+        num = [int(match.lstrip('([').rstrip('])')) for match in matches]
+        if 0 in num:
+            return num
         # print(match.lstrip('([').rstrip('])') for match in matches)
-        numbers = [(int(match.lstrip('([').rstrip('])')) / abs(int(match.lstrip('([').rstrip('])')))) * 5 for match in matches]
+        numbers = [num[0] / abs(num[0]) * 5]
         return numbers
 
     def greeting_message(self, history):
