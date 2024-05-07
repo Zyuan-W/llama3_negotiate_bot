@@ -52,7 +52,11 @@ class Chatbot:
         # Find all matches of the pattern in the text
         matches = re.findall(pattern, text)
         # Extract numbers from matches
-        numbers = [int(match.lstrip('([').rstrip('])')) for match in matches]
+        print("Match", matches)
+        if "0" in matches:
+            return [0]
+        # print(match.lstrip('([').rstrip('])') for match in matches)
+        numbers = [(int(match.lstrip('([').rstrip('])')) / abs(int(match.lstrip('([').rstrip('])')))) * 5 for match in matches]
         return numbers
 
     def greeting_message(self, history):
@@ -125,7 +129,7 @@ class Chatbot:
 
 
         patience = self.get_patience()
-        if patience < 5 and patience > -6:
+        if patience < 20 and patience > -20:
 
             # first_chunk = True
             history[-1][1] = ""
