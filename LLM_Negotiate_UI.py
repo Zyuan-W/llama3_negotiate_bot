@@ -9,6 +9,12 @@ base_url = "http://localhost:11434/v1/",
 api_key = "ollama"
 )
 
+# client = OpenAI(
+#     base_url = "https://integrate.api.nvidia.com/v1",
+#     # api_key = "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" # Ziyuan
+#     api_key = "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" # Karthik
+#     )
+
 
 class Chatbot:
     def __init__(self):
@@ -20,14 +26,14 @@ class Chatbot:
         self.chat_log = []
         # self.patience = 0
         self.mood_values = []
-        # self.system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
-        #                 Response as a criminal,your respnse should be short and clear, no more than two sentences, only ask question when i ask. I am a police officer negotiating with you in order to try and rescue the girl. 
-        #                 if you think my negotiation is help, add positive in [] at the end of your response. if you my negotiation is not help, add negative in [] at the end of your response."""
+        self.system_prompt =  """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
+                        I am a police officer negotiating with you in order to try and rescue the girl. If you think my negotiating response is on par with what you want, give a mood score of +5. Else if you don't think the same, give it -5.
+                        Display the current mood value in the final brackets at the end of each of your sentences. Give you responses within 2 sentences. Please make things moderate for the negotiator and give more positive response. Along with that, don't take every situation as positive."""
 
-        self.system_prompt = """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
-                        I am a police officer negotiating with you in order to try and rescue the girl. Your initial mood is -5, each of your words will display the current mood value in the final brackets. 
-                        When my negotiating sentence makes you happy, give mood value as +5. When my negotiating sentence make you unhappy, give mood value as -5. 
-                        Give you responses within 2 sentences"""
+        # self.system_prompt = """You are a criminal, you are holding a little girl hostage. Come up with your own story for why you kidnapped the girl and begin with that statement. Create a story which can adhere to your regulations.
+        #                 I am a police officer negotiating with you in order to try and rescue the girl. Your initial mood is -5, each of your words will display the current mood value in the final brackets. 
+        #                 When my negotiating sentence makes you happy, give mood value as +5. When my negotiating sentence make you unhappy, give mood value as -5. 
+        #                 Give you responses within 2 sentences"""
                         # When your mood value is greater than 20, you will surrender and release the girl and also say it out loud when you release. 
                         # When your mood value becomes less than -20 and you kill the girl and also say it out loud when you kill her."""
 
@@ -64,8 +70,9 @@ class Chatbot:
 
         greeting_log = []
         message = "Let's Start!"
-
-        greeting_log.append({"role": "system", "content": self.system_prompt})
+        test_str = """For Example - input: "How does 1M dollar sound?",
+                        output: "I'm open to a cash transaction. That's exactly one million dollars. And if you throw in an extra twenty grand, I'll even toss in this little girl's favorite teddy bear as a nice gesture. [Mood: +5]"""
+        greeting_log.append({"role": "system", "content": self.system_prompt + test_str})
 
         # for human, assistant in history:
         #     greeting_log.append({"role": "user", "content": human })
@@ -76,6 +83,7 @@ class Chatbot:
 
         completion = client.chat.completions.create(
         model="llama3",
+        # model = "meta/llama3-8b-instruct",
         messages=greeting_log,
         temperature=0.5,
         top_p=1,
@@ -122,6 +130,7 @@ class Chatbot:
         # chat_log.append({"role": "user", "content": history[-1][0]})
         completion = client.chat.completions.create(
             model='llama3',
+            # model = "meta/llama3-8b-instruct",
             messages= self.chat_log,
             temperature=1.0,
             max_tokens=100,
@@ -163,6 +172,7 @@ class Chatbot:
 
             completion = client.chat.completions.create(
                 model='llama3',
+                # model = "meta/llama3-8b-instruct",
                 messages= self.chat_log,
                 temperature=1.0,
                 max_tokens=100,
