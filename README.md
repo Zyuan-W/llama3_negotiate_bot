@@ -14,3 +14,5 @@ pip install -f requirements.txt
 ```
 python LLM_Negotiate_UI.py
 ```
+
+![Project Architecture](images/00.png)
